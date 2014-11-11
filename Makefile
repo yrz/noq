@@ -1,4 +1,4 @@
-CFLAGS=-Wall -I../../lib/libowfat/ -g
+CFLAGS=-Wall -I../libowfat/ -g
 LDLIBS=../libowfat/libowfat.a -g
 OBJ=tun_alloc.o nic.o
 
