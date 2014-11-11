@@ -22,7 +22,7 @@
 #define u64 uint64_t
 
 #include "tun_alloc.h"
-#include "ynet.h"
+#include "nic.h"
 
 #define VERSION "v0.1"
 
@@ -314,10 +314,10 @@ main (int argc, char **argv)
   if ((tun = tun_alloc (tun_name)) < 0) e("tun_alloc()");
   if ((net = socket_udp4 ()) < 0) e("socket()");
   if (scan_ip4 (remote_ip, raddr) != str_len (remote_ip)) e("IP parse error");
-  if (get_eth (net, eth_name) < 0) e("failed to find interface");
-  if (get_ip4 (net, eth_name, laddr) < 0) e("failed to find IP address");
-  if (!(net_mtu = get_mtu (net, eth_name))) e("failed to get eth MTU");
-  if (!(tun_mtu = get_mtu (net, tun_name))) e("failed to get tun MTU");
+  if (nic_if (net, eth_name) < 0) e("failed to find interface");
+  if (nic_ip4 (net, eth_name, laddr) < 0) e("failed to find IP address");
+  if (!(net_mtu = nic_mtu (net, eth_name))) e("failed to get eth MTU");
+  if (!(tun_mtu = nic_mtu (net, tun_name))) e("failed to get tun MTU");
 
   buf = malloc (net_mtu);
   pkt_tun = malloc (tun_mtu);
