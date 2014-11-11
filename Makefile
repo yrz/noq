@@ -1,5 +1,5 @@
 CFLAGS=-Wall -I../../lib/libowfat/ -g
-LDLIBS=../../lib/libowfat/libowfat.a -g
+LDLIBS=../libowfat/libowfat.a -g
 OBJ=tun_alloc.o nic.o
 
 all: noq push
