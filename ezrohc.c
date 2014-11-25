@@ -36,7 +36,7 @@ ezrohc_init (size_t buf_size)
 				    ROHC_PROFILE_ESP,
 				    ROHC_PROFILE_RTP,
 				    ROHC_PROFILE_UDPLITE, -1);
-  if(h->s) e("");
+  if(!(h->s)) e("rohc_comp_enable_profiles:");
 
   h->d = rohc_decomp_new2(ROHC_SMALL_CID, ROHC_SMALL_CID_MAX, ROHC_O_MODE);
   if(h->d == NULL) e("");
@@ -48,9 +48,9 @@ ezrohc_init (size_t buf_size)
 				      ROHC_PROFILE_ESP,
 				      ROHC_PROFILE_RTP,
 				      ROHC_PROFILE_UDPLITE, -1);
-  if(h->s) e("");
+  if(!(h->s)) e("rohc_decomp_enable_profiles:");
   h->s = rohc_decomp_set_traces_cb2(h->d, _print_rohc_traces, NULL);
-  if(h->s) e("");
+  if(!(h->s)) e("");
 
   return h;
 }
