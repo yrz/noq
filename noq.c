@@ -10,7 +10,6 @@
 #include <arpa/inet.h>
 #include <sys/select.h>
 #include <sys/time.h>
-#include <errno.h>
 #include <stdarg.h>
 
 #include <socket.h>
@@ -18,11 +17,13 @@
 #include <str.h>
 
 #define u16 uint16_t
-#define u8 unsigned char
+#define u8 uint8_t
 #define u64 uint64_t
 
+#include "dbg.h"
 #include "tun_alloc.h"
 #include "nic.h"
+#include "ezrohc.h"
 
 #define VERSION "v0.1"
 
@@ -45,8 +46,10 @@ u16 rport = PORT;
 /* ex main */
 int tun, net;
 int net_mtu, tun_mtu;
-char *buf, *pkt_tun, *pkt_net;
+u8 *buf, *pkt_tun, *pkt_net;
+u8 *decomp_net, *decomp_tun;
 char raddr[4], laddr[4];
+ezrohc_h *h;
 
 /* TCM-TF mechanic */
 #define LXT_LIM 64
@@ -66,13 +69,6 @@ u64 lim_peri = 0;
 struct timeval tv;
 
 void u(void);
-
-void
-e (char *err)
-{
-  perror (err);
-  exit (1);
-}
 
 void
 dbg (char *msg, ...)
@@ -100,22 +96,22 @@ eu (char *err, ...)
 }
 
 int
-tun_read (int fd, char *buf, int n)
+tun_read (int fd, u8 *buf, int n)
 {
   int nread;
 
-  if ((nread = read (fd, buf, n)) < 0)
+  if ((nread = read (fd, (char *)buf, n)) < 0)
     e ("tun read()");
   return nread;
 }
 
 int
-tun_write (int fd, char *buf, int n)
+tun_write (int fd, u8 *buf, int n)
 {
   /* XXX should check if all the pkt has been sent inside tun_write */
   int r;
 
-  if ((r = write (fd, buf, n)) < 0)
+  if ((r = write (fd, (char *)buf, n)) < 0)
     e ("tun_write()");
   return r;
 }
@@ -205,7 +201,7 @@ net_send (void)
   
   while(s < size_mux_pkt)
   {
-    r = socket_send4 (net, buf, size_mux_pkt, raddr, rport);
+    r = socket_send4 (net, (char *)buf, size_mux_pkt, raddr, rport);
     if(r == -1) e ("net_send()");
     s += r;
     i++;
@@ -217,11 +213,11 @@ net_send (void)
 }
 
 u16
-decode_len (char *buf)
+decode_len (u8 *buf)
 {
   u16 len;
 
-  len = (u8) buf[0];
+  len = buf[0];
   if (buf[0] & LXT)
   {
     len = len ^ LXT;
@@ -237,7 +233,9 @@ proc_tun_pkt (void)
   u32 r;
   u16 mux_len = 1;
 
-  r = tun_read (tun, pkt_tun, net_mtu);
+  r = tun_read (tun, decomp_tun, net_mtu);
+  r = ezrohc_comp(h, decomp_tun, pkt_tun, r);
+  
   p_size_mux_pkt = size_mux_pkt + r + mux_len;
   if (r >= LXT_LIM) p_size_mux_pkt++;
   if (p_size_mux_pkt > net_mtu) net_send ();
@@ -268,10 +266,10 @@ proc_net_pkt (void)
   u32 r;
   char ip[4];
   u16 port;
-  u16 pkt_len = 0;
+  u16 pkt_len = 0, decomp_len = 0;
   off_t offset;
 
-  r = socket_recv4 (net, pkt_net, net_mtu, ip, &port);
+  r = socket_recv4 (net, (char *)pkt_net, net_mtu, ip, &port);
   if (r == -1)
     e ("proc_net_pkt");
 
@@ -288,7 +286,8 @@ proc_net_pkt (void)
       if ((pkt_len = decode_len (pkt_net + offset)) >= LXT_LIM)
 	offset++;
       offset++;
-      tun_write (tun, pkt_net + offset, pkt_len);
+      decomp_len = ezrohc_decomp(h, pkt_net+offset, decomp_net, pkt_len);
+      tun_write (tun, decomp_net, decomp_len);
       offset += pkt_len;
     }
   }
@@ -320,8 +319,11 @@ main (int argc, char **argv)
   if (!(tun_mtu = nic_mtu (net, tun_name))) e("failed to get tun MTU");
 
   buf = malloc (net_mtu);
+  decomp_tun = malloc (tun_mtu);
   pkt_tun = malloc (tun_mtu);
   pkt_net = malloc (net_mtu);
+  decomp_net = malloc (net_mtu);
+  h = ezrohc_init(net_mtu);
 
   if (scan_ip4 (remote_ip, raddr) != str_len (remote_ip)) e("IP parse error");
   if (socket_bind4 (net, laddr, port) < 0) e("bind()");
@@ -343,12 +345,9 @@ main (int argc, char **argv)
     if (r < 0)
       e ("select()");
 
-    if (FD_ISSET (tun, &rd_set))
-      proc_tun_pkt ();
-    else if (FD_ISSET (net, &rd_set))
-      proc_net_pkt ();
-    else
-      period_expired ();
+    if (FD_ISSET (tun, &rd_set)) proc_tun_pkt ();
+    else if (FD_ISSET (net, &rd_set)) proc_net_pkt ();
+    else period_expired ();
   }
   free (buf);
   return (0);
