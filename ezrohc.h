@@ -11,13 +11,14 @@ struct ezrohc_s
   int s;
   struct rohc_comp *c; /* compressor */
   struct rohc_decomp *d; /* decompressor */
-  struct rohc_buf in;
-  struct rohc_buf *out;
+  int max_len;
 } ezrohc_h;
 
 ezrohc_h *ezrohc_init();
-int ezrohc_comp(ezrohc_h *h, uint8_t *in, uint8_t *out, int len_in);
-int ezrohc_decomp(ezrohc_h *h, uint8_t *in, uint8_t *out, int len_in);
+int 
+ezrohc_comp(ezrohc_h *h, uint8_t *in, uint8_t *out, int len_in);
+int 
+ezrohc_decomp(ezrohc_h *h, uint8_t *in, uint8_t *out, int len_in);
 int ezrohc_free();
 
 #endif

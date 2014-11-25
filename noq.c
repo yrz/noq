@@ -92,6 +92,7 @@ eu (char *err, ...)
   va_start (argp, err);
   vfprintf (stderr, err, argp);
   va_end (argp);
+  puts("");
   u ();
 }
 
@@ -128,10 +129,11 @@ ts_us (void)
 void
 u(void)
 {
-  fprintf (stderr, "Usage: ");
+  fprintf (stderr, "Usage:\n");
   fprintf (stderr,
-	   "%s -i <tun name> -e <if name> -c <peerIP> [-p <port>] [-D]\n",
+	   "%s -i <tun name> -e <if name> -c <peerIP> [-p <port>] [-D] ",
 	   progname);
+  fprintf (stderr, "[-n #packets] [-s size] [-t nsec]\n");
   exit (1);
 }
 
