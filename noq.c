@@ -71,7 +71,7 @@ struct timeval tv;
 void u(void);
 
 void
-dbg (char *msg, ...)
+dbg (const char *msg, ...)
 {
   if (debug)
   {
@@ -85,7 +85,7 @@ dbg (char *msg, ...)
 }
 
 void
-eu (char *err, ...)
+eu (const char *err, ...)
 {
   va_list argp;
 
@@ -117,7 +117,7 @@ tun_write (int fd, u8 *buf, int n)
   return r;
 }
 
-u16
+u64
 ts_us (void)
 {
   struct timeval tv;
@@ -175,7 +175,7 @@ process_opt (int argc, char **argv)
       lim_time *= 1000;
       break;
     default:
-      eu ("\n");
+      eu("\n");
     }
   }
 
@@ -258,6 +258,10 @@ proc_tun_pkt (void)
 
   if (pkts >= lim_pkts || size_mux_pkt >= lim_size || diff_us >= lim_time)
   {
+    dbg("sending %d/%d pkts\n", pkts, lim_pkts);
+    dbg("sending %u/%llu size\n", size_mux_pkt, lim_size);
+    dbg("sending %llu/%llu time\n", diff_us, lim_time);
+    dbg("sending %llu %llu last\n", current_us, last_us);
     net_send ();
   }
 }

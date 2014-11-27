@@ -56,19 +56,6 @@ ezrohc_init (size_t buf_size)
   return h;
 }
 
-void
-dump(uint8_t *in, size_t len)
-{
-  int i;
-  puts("packet:");
-  for(i = 0; i < len; i++)
-  {
-    printf("%02x ", in[i]);
-    if(i%8 == 7) puts("");
-  }
-  puts("");
-}
-
 int 
 ezrohc_comp(ezrohc_h *h, uint8_t *in, uint8_t *out, int len_in)
 {
@@ -101,11 +88,10 @@ _print_rohc_traces (void *const priv_ctxt,
 		    const rohc_trace_entity_t entity,
 		    const int profile, const char *const format, ...)
 {
-  return;
 #ifndef NDEBUG
   va_list args;
   va_start (args, format);
-  vfprintf (stdout, format, args);
+  vfprintf (stderr, format, args);
   va_end (args);
 #endif
 }
