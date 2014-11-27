@@ -92,7 +92,7 @@ eu (const char *err, ...)
   va_start (argp, err);
   vfprintf (stderr, err, argp);
   va_end (argp);
-  puts("");
+  puts ("");
   u ();
 }
 
@@ -208,7 +208,7 @@ net_send (void)
     s += r;
     i++;
   }
-  dbg("net_send(): %d bytes sent in %d iteration", s, i);
+  dbg ("net_send(): %d bytes sent in %d iteration", s, i);
   size_mux_pkt = 0;
   pkts = 0;
   last_us = ts_us ();
