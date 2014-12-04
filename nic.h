@@ -8,7 +8,7 @@
 #include <arpa/inet.h>
 #include <stdint.h>
 
-#define u32 uint32_t
+#include "int.h"
 
 int nic_if(int fd, const char *ifname);
 int nic_mtu(int fd, const char *ifname);

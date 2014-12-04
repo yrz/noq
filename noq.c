@@ -12,18 +12,12 @@
 #include <sys/time.h>
 #include <stdarg.h>
 
-#include <socket.h>
-#include <ip4.h>
-#include <str.h>
-
-#define u16 uint16_t
-#define u8 uint8_t
-#define u64 uint64_t
-
+#include "int.h"
 #include "dbg.h"
 #include "tun_alloc.h"
 #include "nic.h"
 #include "ezrohc.h"
+#include "sck.h"
 
 #define VERSION "v0.1"
 
@@ -203,7 +197,7 @@ net_send (void)
   
   while(s < size_mux_pkt)
   {
-    r = socket_send4 (net, (char *)buf, size_mux_pkt, raddr, rport);
+    r = sck_send4 (net, (char *)buf, size_mux_pkt, raddr, rport);
     if(r == -1) e ("net_send()");
     s += r;
     i++;
@@ -275,7 +269,7 @@ proc_net_pkt (void)
   u16 pkt_len = 0, decomp_len = 0;
   off_t offset;
 
-  r = socket_recv4 (net, (char *)pkt_net, net_mtu, ip, &port);
+  r = sck_recv4 (net, (char *)pkt_net, net_mtu, ip, &port);
   if (r == -1)
     e ("proc_net_pkt");
 
@@ -317,8 +311,8 @@ main (int argc, char **argv)
   process_opt (argc, argv);
 
   if ((tun = tun_alloc (tun_name)) < 0) e("tun_alloc()");
-  if ((net = socket_udp4 ()) < 0) e("socket()");
-  if (scan_ip4 (remote_ip, raddr) != str_len (remote_ip)) e("IP parse error");
+  if ((net = sck_udp4 ()) < 0) e("socket()");
+  if (scan_ip4 (remote_ip, raddr) != strlen (remote_ip)) e("IP parse error");
   if (nic_if (net, eth_name) < 0) e("failed to find interface");
   if (nic_ip4 (net, eth_name, laddr) < 0) e("failed to find IP address");
   if (!(net_mtu = nic_mtu (net, eth_name))) e("failed to get eth MTU");
@@ -331,8 +325,8 @@ main (int argc, char **argv)
   decomp_net = malloc (net_mtu);
   h = ezrohc_init(net_mtu);
 
-  if (scan_ip4 (remote_ip, raddr) != str_len (remote_ip)) e("IP parse error");
-  if (socket_bind4 (net, laddr, port) < 0) e("bind()");
+  if (scan_ip4 (remote_ip, raddr) != strlen (remote_ip)) e("IP parse error");
+  if (sck_bind4 (net, laddr, port) < 0) e("bind()");
 
   maxfd = (tun > net) ? tun : net;
 
